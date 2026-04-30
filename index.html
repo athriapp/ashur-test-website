@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NEXMART</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #f0f0f5;
+    --surface: #13131a;
+    --accent: #ff6b35;
+    --accent2: #ffd166;
+    --success: #06d6a0;
+    --danger: #ef476f;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); font-family:'DM Sans',sans-serif; min-height:100vh; }
+
+  nav {
+    position:sticky; top:0; z-index:100;
+    background:rgba(10,10,15,.88); backdrop-filter:blur(18px);
+    border-bottom:1px solid rgba(255,255,255,.08);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 2rem; height:64px;
+  }
+  .logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; letter-spacing:-.02em; color:#f0f0f5; }
+  .logo span { color:var(--accent); }
+  .nav-right { display:flex; align-items:center; gap:.8rem; }
+  .cart-btn {
+    background:var(--accent); color:#fff; border:none; border-radius:8px;
+    padding:.45rem 1rem; font-family:'Syne',sans-serif; font-weight:700;
+    cursor:pointer; display:flex; align-items:center; gap:.4rem; font-size:.9rem; transition:opacity .2s;
+  }
+  .cart-btn:hover { opacity:.85; }
+  .cart-count {
+    background:#fff; color:var(--accent); border-radius:50%;
+    width:20px; height:20px; font-size:.7rem; display:flex; align-items:center; justify-content:center; font-weight:800;
+  }
+  .user-info { font-size:.85rem; color:#aaa; }
+  .auth-btn {
+    background:transparent; border:1px solid rgba(255,255,255,.2); color:#f0f0f5;
+    border-radius:8px; padding:.4rem .9rem; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s;
+  }
+  .auth-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .auth-btn.danger:hover { border-color:var(--danger); color:var(--danger); }
+  .burger-btn {
+    background:transparent; border:1px solid rgba(255,255,255,.2); color:#f0f0f5;
+    border-radius:8px; padding:.4rem .7rem; cursor:pointer; font-size:1.1rem;
+    display:none; transition:all .2s; line-height:1;
+  }
+  .burger-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+  .modal-overlay {
+    display:none; position:fixed; inset:0; z-index:200;
+    background:rgba(0,0,0,.72); backdrop-filter:blur(6px);
+    align-items:center; justify-content:center;
+  }
+  .modal-overlay.active { display:flex; }
+  .modal {
+    background:#13131a; border:1px solid rgba(255,255,255,.1); border-radius:16px;
+    padding:2rem; width:100%; max-width:420px; position:relative;
+  }
+  .modal h2 { font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; margin-bottom:1.4rem; color:#f0f0f5; }
+  .modal-close { position:absolute; top:1rem; right:1rem; background:none; border:none; color:#6e6e8a; font-size:1.4rem; cursor:pointer; }
+  .field { display:flex; flex-direction:column; gap:.4rem; margin-bottom:1rem; }
+  .field label { font-size:.82rem; color:#6e6e8a; font-weight:500; }
+  .field input {
+    background:#0f1018; border:1px solid #252535; border-radius:8px;
+    padding:.65rem 1rem; color:#f0f0f5; font-family:'DM Sans',sans-serif; font-size:.95rem;
+    outline:none; transition:border-color .2s;
+  }
+  .field input:focus { border-color:var(--accent); }
+  .btn-primary {
+    width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:.75rem; font-family:'Syne',sans-serif; font-weight:700; font-size:1rem;
+    cursor:pointer; transition:opacity .2s; margin-top:.5rem;
+  }
+  .btn-primary:hover { opacity:.85; }
+  .modal-switch { text-align:center; margin-top:1rem; font-size:.85rem; color:#6e6e8a; }
+  .modal-switch a { color:var(--accent); cursor:pointer; text-decoration:underline; }
+  .msg { font-size:.82rem; padding:.5rem .8rem; border-radius:6px; margin-bottom:.8rem; display:none; }
+  .msg.error { background:rgba(239,71,111,.15); color:var(--danger); display:block; }
+  .msg.success { background:rgba(6,214,160,.15); color:var(--success); display:block; }
+
+  .section { padding:2rem; max-width:1200px; margin:0 auto; }
+  .section-title {
+    font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:1.2rem;
+    display:flex; align-items:center; gap:.5rem; color:#13131a;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background:#d0d0da; }
+  .products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1.2rem; }
+  .product-card {
+    background:#fff; border:1px solid #e0e0ea; border-radius:14px;
+    overflow:hidden; transition:transform .25s, border-color .25s;
+    display:flex; flex-direction:column; box-shadow:0 2px 10px rgba(0,0,0,.06);
+  }
+  .product-card:hover { transform:translateY(-4px); border-color:var(--accent); }
+  .product-img { width:100%; aspect-ratio:1; background:#f5f5fa; display:flex; align-items:center; justify-content:center; font-size:3rem; }
+  .product-img img { width:100%; height:100%; object-fit:cover; }
+  .product-body { padding:1rem; flex:1; display:flex; flex-direction:column; gap:.5rem; }
+  .product-name { font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; color:#13131a; }
+  .product-price { color:var(--accent); font-weight:700; font-size:1.1rem; }
+  .product-qty { color:#888; font-size:.8rem; }
+  .product-qty.low { color:var(--danger); }
+  .add-cart-btn {
+    margin-top:auto; background:var(--accent); color:#fff; border:none;
+    border-radius:8px; padding:.55rem; font-family:'Syne',sans-serif; font-weight:700;
+    cursor:pointer; font-size:.88rem; transition:opacity .2s;
+  }
+  .add-cart-btn:hover { opacity:.85; }
+  .add-cart-btn:disabled { background:#d0d0da; color:#aaa; cursor:not-allowed; }
+  .empty-state { color:#999; text-align:center; padding:3rem; grid-column:1/-1; font-size:.95rem; }
+
+  .cart-overlay { display:none; position:fixed; inset:0; z-index:150; background:rgba(0,0,0,.5); backdrop-filter:blur(4px); }
+  .cart-overlay.active { display:block; }
+  .cart-drawer {
+    position:fixed; top:0; right:0; height:100vh; width:380px; max-width:95vw;
+    background:#13131a; border-left:1px solid #252535;
+    z-index:160; display:flex; flex-direction:column;
+    transform:translateX(100%); transition:transform .3s ease;
+  }
+  .cart-drawer.open { transform:translateX(0); }
+  .cart-header { padding:1.5rem; border-bottom:1px solid #252535; display:flex; align-items:center; justify-content:space-between; }
+  .cart-header h3 { font-family:'Syne',sans-serif; font-weight:800; color:#f0f0f5; }
+  .close-cart { background:none; border:none; color:#6e6e8a; font-size:1.3rem; cursor:pointer; }
+  .cart-items { flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:.8rem; }
+  .cart-item { background:#1e1f2e; border:1px solid #252535; border-radius:10px; padding:.8rem 1rem; display:flex; align-items:center; gap:.8rem; }
+  .cart-item-name { flex:1; font-weight:500; font-size:.9rem; color:#f0f0f5; }
+  .cart-item-price { color:var(--accent2); font-weight:700; font-size:.88rem; }
+  .qty-ctrl { display:flex; align-items:center; gap:.3rem; }
+  .qty-btn { background:#252535; border:none; color:#f0f0f5; width:24px; height:24px; border-radius:4px; cursor:pointer; font-size:.9rem; transition:background .2s; }
+  .qty-btn:hover { background:var(--accent); }
+  .qty-val { font-size:.85rem; min-width:20px; text-align:center; color:#f0f0f5; }
+  .remove-item-btn { background:none; border:none; color:#6e6e8a; cursor:pointer; font-size:1rem; }
+  .remove-item-btn:hover { color:var(--danger); }
+  .cart-footer { padding:1.2rem 1.5rem; border-top:1px solid #252535; }
+  .cart-total { display:flex; justify-content:space-between; font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:1rem; color:#f0f0f5; }
+  .checkout-btn {
+    width:100%; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:.8rem; font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; cursor:pointer; transition:opacity .2s;
+  }
+  .checkout-btn:hover { opacity:.85; }
+  .need-login { color:#6e6e8a; font-size:.82rem; text-align:center; margin-top:.6rem; }
+
+  .orders-overlay { display:none; position:fixed; inset:0; z-index:150; background:rgba(0,0,0,.5); backdrop-filter:blur(4px); }
+  .orders-overlay.active { display:block; }
+  .orders-drawer {
+    position:fixed; top:0; left:0; height:100vh; width:420px; max-width:95vw;
+    background:#13131a; border-right:1px solid #252535;
+    z-index:160; display:flex; flex-direction:column;
+    transform:translateX(-100%); transition:transform .3s ease;
+  }
+  .orders-drawer.open { transform:translateX(0); }
+  .orders-drawer-header { padding:1.5rem; border-bottom:1px solid #252535; display:flex; align-items:center; justify-content:space-between; }
+  .orders-drawer-header h3 { font-family:'Syne',sans-serif; font-weight:800; color:#f0f0f5; }
+  .orders-drawer-body { flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:.8rem; }
+  .order-card { background:#1e1f2e; border:1px solid #252535; border-radius:12px; padding:1rem 1.2rem; }
+  .order-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem; flex-wrap:wrap; gap:.4rem; }
+  .order-id { font-family:'Syne',sans-serif; font-weight:700; font-size:.9rem; color:#f0f0f5; }
+  .order-status { padding:.25rem .7rem; border-radius:20px; font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+  .status-pending { background:rgba(255,107,53,.15); color:var(--accent); }
+  .status-preparing { background:rgba(255,209,102,.2); color:#ffd166; }
+  .status-delivering { background:rgba(99,179,237,.15); color:#63b3ed; }
+  .status-delivered { background:rgba(6,214,160,.15); color:var(--success); }
+  .order-items-list { font-size:.84rem; color:#888; margin-bottom:.5rem; line-height:1.6; }
+  .order-total-row { font-family:'Syne',sans-serif; font-weight:700; font-size:.95rem; color:#ffd166; }
+  .order-addr-row { font-size:.78rem; color:#6e6e8a; margin-top:.3rem; }
+
+  .checkout-modal { max-width:460px; }
+
+  .toast {
+    position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(100px);
+    background:#1e1f2e; border:1px solid #252535; border-radius:10px;
+    padding:.7rem 1.4rem; font-size:.9rem; z-index:300; color:#f0f0f5;
+    transition:transform .3s ease; pointer-events:none;
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+  .toast.ok { border-color:var(--success); color:var(--success); }
+  .toast.err { border-color:var(--danger); color:var(--danger); }
+
+  .danger-zone { margin-top:2rem; padding:1rem 1.5rem; border:1px solid rgba(239,71,111,.25); border-radius:10px; }
+  .danger-zone h4 { color:var(--danger); font-family:'Syne',sans-serif; margin-bottom:.5rem; }
+  .danger-zone p { font-size:.82rem; color:#6e6e8a; margin-bottom:.8rem; }
+  .del-acc-btn { background:rgba(239,71,111,.15); color:var(--danger); border:1px solid var(--danger); border-radius:8px; padding:.45rem 1rem; cursor:pointer; font-weight:600; font-size:.85rem; }
+  .del-acc-btn:hover { background:var(--danger); color:#fff; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">NEX<span>MART</span></div>
+  <div class="nav-right">
+    <span class="user-info" id="userLabel">Not signed in</span>
+    <button class="burger-btn" id="burgerBtn" style="display:none" onclick="toggleOrders()">☰</button>
+    <button class="auth-btn" id="authToggleBtn" onclick="openAuth()">Sign In</button>
+    <button class="auth-btn danger" id="signOutBtn" style="display:none" onclick="doSignOut()">Sign Out</button>
+    <button class="cart-btn" onclick="toggleCart()">🛒 Cart <span class="cart-count" id="cartCount">0</span></button>
+  </div>
+</nav>
+
+<div class="section">
+  <div class="section-title">Products</div>
+  <div class="products-grid" id="productsGrid"><div class="empty-state">Loading products…</div></div>
+</div>
+
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuth()">✕</button>
+    <h2 id="authTitle">Sign In</h2>
+    <div class="msg" id="authMsg"></div>
+    <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com"/></div>
+    <div class="field"><label>Password</label><input type="password" id="authPassword" placeholder="••••••••"/></div>
+    <div class="field" id="nameField" style="display:none"><label>Display Name</label><input type="text" id="authName" placeholder="Your name"/></div>
+    <button class="btn-primary" onclick="doAuth()">Continue</button>
+    <div class="modal-switch" id="authSwitch">No account? <a onclick="toggleAuthMode()">Create one</a></div>
+    <div class="danger-zone" id="dangerZone" style="display:none">
+      <h4>⚠ Danger Zone</h4>
+      <p>Permanently delete your account and all data. This cannot be undone.</p>
+      <button class="del-acc-btn" onclick="deleteAccount()">Delete My Account</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal checkout-modal">
+    <button class="modal-close" onclick="closeCheckout()">✕</button>
+    <h2>Place Order</h2>
+    <div class="msg" id="checkoutMsg"></div>
+    <div class="field"><label>Delivery Address</label><input type="text" id="deliveryAddress" placeholder="Street, City"/></div>
+    <div class="field"><label>Phone Number</label><input type="text" id="phoneNumber" placeholder="+964 …"/></div>
+    <p style="font-size:.85rem;color:#6e6e8a;margin-bottom:.5rem">Order summary will be sent to the admin for confirmation.</p>
+    <button class="btn-primary" onclick="placeOrder()">Confirm Order</button>
+  </div>
+</div>
+
+<div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-header"><h3>Your Cart</h3><button class="close-cart" onclick="toggleCart()">✕</button></div>
+  <div class="cart-items" id="cartItems"><div class="empty-state" style="color:#6e6e8a">Cart is empty</div></div>
+  <div class="cart-footer">
+    <div class="cart-total"><span>Total</span><span id="cartTotal">$0.00</span></div>
+    <button class="checkout-btn" onclick="startCheckout()">Proceed to Checkout</button>
+    <p class="need-login" id="needLogin" style="display:none">⚠ Please sign in to place an order</p>
+  </div>
+</div>
+
+<div class="orders-overlay" id="ordersOverlay" onclick="toggleOrders()"></div>
+<div class="orders-drawer" id="ordersDrawer">
+  <div class="orders-drawer-header">
+    <h3>My Orders</h3>
+    <button class="close-cart" onclick="toggleOrders()">✕</button>
+  </div>
+  <div class="orders-drawer-body" id="ordersList">
+    <div style="color:#6e6e8a;text-align:center;padding:2rem;font-size:.9rem">No orders yet.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, updateProfile, deleteUser
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDuTzdZdoZua4TaIC8mrz_atFwJEA-Xymg",
+  authDomain: "e33-11786.firebaseapp.com",
+  databaseURL: "https://e33-11786-default-rtdb.firebaseio.com",
+  projectId: "e33-11786",
+  storageBucket: "e33-11786.firebasestorage.app",
+  messagingSenderId: "745754376281",
+  appId: "1:745754376281:web:b8b2bb29a44bec0658d948"
+};
+
+const app  = initializeApp(firebaseConfig);
+const db   = getDatabase(app);
+const auth = getAuth(app);
+
+let cart = {};
+let currentUser = null;
+let isSignUp = false;
+let productsSnapshot = {};
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('userLabel').textContent = user.displayName || user.email;
+    document.getElementById('signOutBtn').style.display = 'inline-block';
+    document.getElementById('authToggleBtn').style.display = 'none';
+    document.getElementById('burgerBtn').style.display = 'inline-block';
+    document.getElementById('dangerZone').style.display = 'block';
+    document.getElementById('needLogin').style.display = 'none';
+    loadOrders(user.uid);
+  } else {
+    document.getElementById('userLabel').textContent = 'Not signed in';
+    document.getElementById('signOutBtn').style.display = 'none';
+    document.getElementById('authToggleBtn').style.display = 'inline-block';
+    document.getElementById('burgerBtn').style.display = 'none';
+    document.getElementById('dangerZone').style.display = 'none';
+    document.getElementById('ordersList').innerHTML = '<div style="color:#6e6e8a;text-align:center;padding:2rem;font-size:.9rem">Sign in to see your orders.</div>';
+  }
+});
+
+onValue(ref(db, 'products'), snap => {
+  productsSnapshot = snap.val() || {};
+  const grid = document.getElementById('productsGrid');
+  if (!Object.keys(productsSnapshot).length) {
+    grid.innerHTML = '<div class="empty-state">No products yet — check back soon!</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  Object.entries(productsSnapshot).forEach(([id, p]) => {
+    const outOfStock = p.quantity <= 0;
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    card.innerHTML = `
+      <div class="product-img">${p.image ? `<img src="${p.image}" alt="${p.name}" onerror="this.parentElement.innerHTML='🛍️'"/>` : '🛍️'}</div>
+      <div class="product-body">
+        <div class="product-name">${p.name}</div>
+        <div class="product-price">$${parseFloat(p.price).toFixed(2)}</div>
+        <div class="product-qty ${p.quantity < 5 && p.quantity > 0 ? 'low' : ''}">${outOfStock ? 'Out of stock' : `${p.quantity} in stock`}</div>
+        <button class="add-cart-btn" ${outOfStock ? 'disabled' : ''} onclick="window.addToCart('${id}','${p.name}',${p.price},${p.quantity})">
+          ${outOfStock ? 'Out of Stock' : 'Add to Cart'}
+        </button>
+      </div>`;
+    grid.appendChild(card);
+  });
+});
+
+window.addToCart = (id, name, price, stock) => {
+  if (cart[id]) {
+    if (cart[id].qty >= stock) { showToast('Max stock reached', 'err'); return; }
+    cart[id].qty++;
+  } else {
+    cart[id] = { name, price, qty: 1, stock };
+  }
+  renderCart();
+  showToast(`${name} added!`, 'ok');
+};
+
+function renderCart() {
+  const items = document.getElementById('cartItems');
+  const count = document.getElementById('cartCount');
+  const total = document.getElementById('cartTotal');
+  const keys  = Object.keys(cart);
+  count.textContent = keys.reduce((s, k) => s + cart[k].qty, 0);
+  if (!keys.length) { items.innerHTML = '<div class="empty-state" style="color:#6e6e8a">Cart is empty</div>'; total.textContent = '$0.00'; return; }
+  let t = 0;
+  items.innerHTML = keys.map(id => {
+    const i = cart[id]; t += i.price * i.qty;
+    return `<div class="cart-item">
+      <div class="cart-item-name">${i.name}</div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="window.changeQty('${id}',-1)">−</button>
+        <span class="qty-val">${i.qty}</span>
+        <button class="qty-btn" onclick="window.changeQty('${id}',1)">+</button>
+      </div>
+      <div class="cart-item-price">$${(i.price * i.qty).toFixed(2)}</div>
+      <button class="remove-item-btn" onclick="window.removeItem('${id}')">🗑</button>
+    </div>`;
+  }).join('');
+  total.textContent = `$${t.toFixed(2)}`;
+}
+
+window.changeQty = (id, delta) => {
+  cart[id].qty += delta;
+  if (cart[id].qty <= 0) delete cart[id];
+  else if (cart[id].qty > cart[id].stock) cart[id].qty = cart[id].stock;
+  renderCart();
+};
+window.removeItem = id => { delete cart[id]; renderCart(); };
+
+window.toggleCart = () => {
+  document.getElementById('cartOverlay').classList.toggle('active');
+  document.getElementById('cartDrawer').classList.toggle('open');
+  document.getElementById('needLogin').style.display = currentUser ? 'none' : 'block';
+};
+
+window.toggleOrders = () => {
+  document.getElementById('ordersOverlay').classList.toggle('active');
+  document.getElementById('ordersDrawer').classList.toggle('open');
+};
+
+window.startCheckout = () => {
+  if (!currentUser) { showToast('Sign in first!', 'err'); return; }
+  if (!Object.keys(cart).length) { showToast('Cart is empty', 'err'); return; }
+  document.getElementById('checkoutModal').classList.add('active');
+};
+window.closeCheckout = () => document.getElementById('checkoutModal').classList.remove('active');
+
+window.placeOrder = async () => {
+  const addr  = document.getElementById('deliveryAddress').value.trim();
+  const phone = document.getElementById('phoneNumber').value.trim();
+  const msgEl = document.getElementById('checkoutMsg');
+  if (!addr || !phone) { msgEl.textContent = 'Please fill all fields.'; msgEl.className = 'msg error'; return; }
+
+  const items = Object.entries(cart).map(([id, i]) => ({ id, name: i.name, price: i.price, qty: i.qty }));
+  const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+
+  await push(ref(db, 'orders'), {
+    userId: currentUser.uid,
+    userName: currentUser.displayName || currentUser.email,
+    items, total, address: addr, phone,
+    status: 'pending',
+    createdAt: Date.now()
+  });
+
+  const stockUpdates = {};
+  items.forEach(item => {
+    const currentQty = productsSnapshot[item.id] ? productsSnapshot[item.id].quantity : 0;
+    const newQty = Math.max(0, currentQty - item.qty);
+    stockUpdates[`products/${item.id}/quantity`] = newQty;
+  });
+  await update(ref(db), stockUpdates);
+
+  cart = {};
+  renderCart();
+  closeCheckout();
+  toggleCart();
+  showToast('Order placed! Awaiting confirmation.', 'ok');
+};
+
+function loadOrders(uid) {
+  onValue(ref(db, 'orders'), snap => {
+    const list = document.getElementById('ordersList');
+    const data = snap.val();
+    if (!data) { list.innerHTML = '<div style="color:#6e6e8a;text-align:center;padding:2rem;font-size:.9rem">No orders yet.</div>'; return; }
+    const mine = Object.entries(data).filter(([, o]) => o.userId === uid).sort(([,a],[,b]) => b.createdAt - a.createdAt);
+    if (!mine.length) { list.innerHTML = '<div style="color:#6e6e8a;text-align:center;padding:2rem;font-size:.9rem">No orders yet.</div>'; return; }
+    list.innerHTML = mine.map(([id, o]) => `
+      <div class="order-card">
+        <div class="order-meta">
+          <span class="order-id">#${id.slice(-6).toUpperCase()}</span>
+          <span class="order-status status-${o.status}">${o.status}</span>
+        </div>
+        <div class="order-items-list">${o.items.map(i => `${i.name} ×${i.qty}`).join('<br>')}</div>
+        <div class="order-total-row">Total: $${parseFloat(o.total).toFixed(2)}</div>
+        <div class="order-addr-row">📍 ${o.address} · 📞 ${o.phone}</div>
+      </div>`).join('');
+  });
+}
+
+window.openAuth  = () => document.getElementById('authModal').classList.add('active');
+window.closeAuth = () => { document.getElementById('authModal').classList.remove('active'); clearMsg(); };
+window.toggleAuthMode = () => {
+  isSignUp = !isSignUp;
+  document.getElementById('authTitle').textContent = isSignUp ? 'Create Account' : 'Sign In';
+  document.getElementById('nameField').style.display = isSignUp ? 'flex' : 'none';
+  document.getElementById('authSwitch').innerHTML = isSignUp
+    ? 'Already have an account? <a onclick="window.toggleAuthMode()">Sign in</a>'
+    : 'No account? <a onclick="window.toggleAuthMode()">Create one</a>';
+  clearMsg();
+};
+function clearMsg() { const m = document.getElementById('authMsg'); m.className = 'msg'; m.textContent = ''; m.style.display = 'none'; }
+function showAuthMsg(txt, type) { const m = document.getElementById('authMsg'); m.className = `msg ${type}`; m.textContent = txt; m.style.display = 'block'; }
+
+window.doAuth = async () => {
+  const email = document.getElementById('authEmail').value.trim();
+  const pw    = document.getElementById('authPassword').value;
+  const name  = document.getElementById('authName').value.trim();
+  try {
+    if (isSignUp) {
+      const cred = await createUserWithEmailAndPassword(auth, email, pw);
+      if (name) await updateProfile(cred.user, { displayName: name });
+      showToast('Account created!', 'ok');
+    } else {
+      await signInWithEmailAndPassword(auth, email, pw);
+      showToast('Welcome back!', 'ok');
+    }
+    closeAuth();
+  } catch(e) { showAuthMsg(e.message, 'error'); }
+};
+
+window.doSignOut = () => { signOut(auth); showToast('Signed out', 'ok'); };
+
+window.deleteAccount = async () => {
+  if (!confirm('Delete your account permanently?')) return;
+  try { await deleteUser(currentUser); showToast('Account deleted', 'ok'); closeAuth(); }
+  catch(e) { showAuthMsg(e.message, 'error'); }
+};
+
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 2800);
+}
+window.showToast = showToast;
+</script>
+</body>
+</html>
